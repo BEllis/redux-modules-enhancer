@@ -76,6 +76,14 @@ const modulesEnhancer = function() {
         throw new Error("Module " + moduleId + " has already been loaded.");
       }
 
+      if (initialState instanceof Function) {
+        middlewares = [ initialState, ...middlewares ]
+      }
+
+      if (initialState instanceof Array && (middlewares == undefined || middlewares.length === 0)) {
+        middlewares = initialState;
+      }
+
       if (store.getState()[moduleId] !== undefined) {
         throw new Error("Unable to add module [" + moduleId + "] as the name is used by the initial state or a base reducer.")
       }
@@ -89,8 +97,11 @@ const modulesEnhancer = function() {
         middlewares = [ middlewares];
       }
 
-      let chain = middlewares.map(middleware => middleware(middlewareAPI));
-      modularMiddlewareChain[moduleId] = Redux.compose(...chain);
+      if (middlewares instanceof Array) {
+        let chain = middlewares.map(middleware => middleware(middlewareAPI));
+        modularMiddlewareChain[moduleId] = Redux.compose(...chain);
+      }
+
       modularReducers[moduleId] = reducer;
       innerDispatch({ type: MODULE_ADDED, moduleId: moduleId });
     }
@@ -113,8 +124,13 @@ const modulesEnhancer = function() {
       }
 
       innerDispatch({ type: MODULE_REMOVED, moduleId: moduleId });
-      delete modularMiddlewareChain[moduleId];
-      delete modularReducers[moduleId];
+      if (modularMiddlewareChain[moduleId] !== undefined) {
+        delete modularMiddlewareChain[moduleId];
+      }
+
+      if (modularReducers[moduleId] !== undefined) {
+        delete modularReducers[moduleId];
+      }
     }
 
     const dispatch = innerDispatch;

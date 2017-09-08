@@ -144,7 +144,7 @@ describe("modulesEnhancer", function() {
           moduleReducerActions.push(action);
           return state;
         },
-        state: { bob: "the builder"},
+        initialState: { bob: "the builder"},
         middlewares: [ store => next => action => { middlewareActions.push(action); return next(action); } ]
       }
 
@@ -161,4 +161,85 @@ describe("modulesEnhancer", function() {
       expect(store.getState()["my-module"]).to.equal(undefined);
 
     });
+
+    it("should support adding a module as a module object with only moduleId and reducer", function() {
+      const baseReducerActions = [];
+      let reducer = (state = {}, action) => { baseReducerActions.push(action); return state };
+      let initialState = {};
+      let enhancer = modulesEnhancer();
+
+      let store = Redux.createStore(reducer, initialState, enhancer);
+
+      let moduleReducerActions = [];
+      let module = {
+        moduleId: "my-module",
+        reducer: (state, action) => {
+          moduleReducerActions.push(action);
+          return state;
+        }
+      }
+
+      const MY_AMAZING_ACTION = "MY_AMAZING_ACTION"
+      store.dispatch({ type: MY_AMAZING_ACTION });
+      store.addModule(module);
+      store.dispatch({ type: MY_AMAZING_ACTION });
+
+      expect(baseReducerActions.length).to.equal(4); // INIT, MY_AMAZING_ACTION, MODULE_ADDED, MY_AMAZING_ACTION
+      expect(moduleReducerActions.length).to.equal(2); // MODULE_ADDED, MY_AMAZING_ACTION
+    })
+
+    it("should support adding a module with only moduleId, reducer and middlewares", function() {
+      const baseReducerActions = [];
+      let reducer = (state = {}, action) => { baseReducerActions.push(action); return state };
+      let initialState = {};
+      let enhancer = modulesEnhancer();
+
+      let store = Redux.createStore(reducer, initialState, enhancer);
+
+      let moduleReducerActions = [];
+      let middlewareActions = [];
+      let moduleReducer = (state, action) => {
+          moduleReducerActions.push(action);
+          return state;
+        };
+      let middlewares = [ store => next => action => { middlewareActions.push(action); return next(action); } ];
+
+      const MY_AMAZING_ACTION = "MY_AMAZING_ACTION"
+      store.dispatch({ type: MY_AMAZING_ACTION });
+      store.addModule("my-module", moduleReducer, middlewares);
+      store.dispatch({ type: MY_AMAZING_ACTION });
+
+      expect(baseReducerActions.length).to.equal(4); // INIT, MY_AMAZING_ACTION, MODULE_ADDED, MY_AMAZING_ACTION
+      expect(moduleReducerActions.length).to.equal(2); // MODULE_ADDED, MY_AMAZING_ACTION
+      expect(middlewareActions.length).to.equal(2); // MODULE_ADDED, MY_AMAZING_ACTION
+    })
+
+    it("should support adding a module as a module object with only moduleId, reducer and middlewares", function() {
+      const baseReducerActions = [];
+      let reducer = (state = {}, action) => { baseReducerActions.push(action); return state };
+      let initialState = {};
+      let enhancer = modulesEnhancer();
+
+      let store = Redux.createStore(reducer, initialState, enhancer);
+
+      let moduleReducerActions = [];
+      let middlewareActions = [];
+      let module = {
+        moduleId: "my-module",
+        reducer: (state, action) => {
+          moduleReducerActions.push(action);
+          return state;
+        },
+        middlewares: [ store => next => action => { middlewareActions.push(action); return next(action); } ]
+      }
+
+      const MY_AMAZING_ACTION = "MY_AMAZING_ACTION"
+      store.dispatch({ type: MY_AMAZING_ACTION });
+      store.addModule(module);
+      store.dispatch({ type: MY_AMAZING_ACTION });
+
+      expect(baseReducerActions.length).to.equal(4); // INIT, MY_AMAZING_ACTION, MODULE_ADDED, MY_AMAZING_ACTION
+      expect(moduleReducerActions.length).to.equal(2); // MODULE_ADDED, MY_AMAZING_ACTION
+      expect(middlewareActions.length).to.equal(2); // MODULE_ADDED, MY_AMAZING_ACTION
+    })
 });

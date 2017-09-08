@@ -7,7 +7,8 @@
     "clean": "rm -r -f lib",
     "compile": "npm run clean && babel --presets es2015,stage-0 -d lib/ src/ && minify lib/*.js",
     "test": "npm run compile && mocha --compilers js:babel-core/register --reporter spec",
-    "prepare": "npm run compile"
+    "prepare": "npm run compile",
+    "prepublishOnly": "git push --tags && git push"
   },
   "repository": "https://github.com/BEllis/redux-modules-enhancer.git",
   "keywords": [

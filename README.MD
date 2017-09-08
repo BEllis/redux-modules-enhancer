@@ -73,7 +73,7 @@ store.dispatch({ type: MY_EVENT }); // Only received by myInitialReducer (and an
 
 ## Using React.js?
 
-Why not check out my other project, redux-react-module-loader that allows you to add,
+Why not check out my other project, react-redux-module that allows you to add,
 
 ```html
 <ReduxModule moduleId="my-module" reducer={ myModuleReducer } initialState={ myModuleInitialState } middlewares={ [ myModuleMiddlware1, myModuleMiddlware2 ] } />

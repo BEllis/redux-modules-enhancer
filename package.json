@@ -1,8 +1,8 @@
 {
   "name": "redux-modules-enhancer",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A redux enhancer to support late-bound reducer, state and middleware injection.",
-  "main": "index.js",
+  "main": "lib/modulesEnhancer.js",
   "scripts": {
     "compile": "babel --presets es2015,stage-0 -d lib/ src/",
     "test": "npm run compile && mocha --compilers js:babel-core/register --reporter spec",
@@ -10,12 +10,14 @@
   },
   "keywords": [
     "redux",
+    "modules",
+    "enhancer",
     "injection"
   ],
   "author": "Ben Ellis",
   "license": "MIT",
   "dependencies": {
-    "redux": "^3.7.2"
+    "redux": "^3.1.0"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",

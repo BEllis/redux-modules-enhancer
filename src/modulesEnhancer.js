@@ -40,6 +40,14 @@ const modulesEnhancer = function() {
     }
 
     const hasModule = function(moduleId) {
+      if (moduleId instanceof Object) {
+        if (typeof moduleId.moduleId !== "string") {
+          throw new Error("module.id must be a string value.");
+        }
+
+        moduleId = moduleId.moduleId;
+      }
+
       if (typeof moduleId !== "string") {
         throw new Error("moduleId must be a string value.");
       }
@@ -48,6 +56,18 @@ const modulesEnhancer = function() {
     }
 
     const addModule = function(moduleId, reducer, initialState, ...middlewares) {
+      if (moduleId instanceof Object) {
+        if (typeof moduleId.moduleId !== "string") {
+          throw new Error("module.id must be a string value.");
+        }
+
+        const module = moduleId;
+        moduleId = module.moduleId;
+        reducer = module.reducer;
+        initialState = module.initialState;
+        middlewares = module.middlewares;
+      }
+
       if (typeof moduleId !== "string") {
         throw new Error("moduleId must be a string value.");
       }
@@ -65,6 +85,10 @@ const modulesEnhancer = function() {
         dispatch: (...args) => innerDispatch(...args)
       }
 
+      if (middlewares instanceof Function) {
+        middlewares = [ middlewares];
+      }
+
       let chain = middlewares.map(middleware => middleware(middlewareAPI));
       modularMiddlewareChain[moduleId] = Redux.compose(...chain);
       modularReducers[moduleId] = reducer;
@@ -72,6 +96,14 @@ const modulesEnhancer = function() {
     }
 
     const removeModule = function(moduleId) {
+      if (moduleId instanceof Object) {
+        if (typeof moduleId.moduleId !== "string") {
+          throw new Error("module.id must be a string value.");
+        }
+
+        moduleId = moduleId.moduleId;
+      }
+
       if (typeof moduleId !== "string") {
         throw new Error("moduleId must be a string value.");
       }

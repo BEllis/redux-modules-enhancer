@@ -4,10 +4,12 @@
   "description": "A redux enhancer to support late-bound reducer, state and middleware injection.",
   "main": "lib/modulesEnhancer.js",
   "scripts": {
-    "compile": "babel --presets es2015,stage-0 -d lib/ src/",
+    "clean": "rm -r lib",
+    "compile": "npm run clean && babel --presets es2015,stage-0 -d lib/ src/ && minify lib/*.js",
     "test": "npm run compile && mocha --compilers js:babel-core/register --reporter spec",
-    "prepublish": "npm run compile"
+    "prepare": "npm run compile"
   },
+  "repository": "https://github.com/BEllis/redux-modules-enhancer.git",
   "keywords": [
     "redux",
     "modules",
@@ -25,6 +27,7 @@
     "babel-preset-es2015": "^6.24.1",
     "babel-preset-stage-0": "^6.24.1",
     "chai": "^4.1.2",
+    "minifier": "^0.8.1",
     "mocha": "^3.5.0"
   }
 }

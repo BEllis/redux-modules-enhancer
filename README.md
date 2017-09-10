@@ -32,26 +32,26 @@ or, if you want to use other enhancers as well,
 
 ## What does the enhancer do?
 
-The enhancer adds three methods to the store returned by createStore,
+The enhancer adds three methods to the store returned when calling createStore,
 
 ```javascript
-store.addModule(moduleId, reducer, initialState, ...middlewares);
+store.addModule(moduleId, reducer, initialState, ...middleware);
 ```
 
 or
 
 ```javascript
-var module = { moduleId, reducer, initialState, middlewares }
+var module = { moduleId, reducer, initialState, middleware }
 store.addModule(module);
 ```
 
 Adds a module using
-the given reducer, initialState and middlewares.
+the given reducer, initialState and middleware.
 
 -   *moduleId* - (*Required*) this is equivalent to the name of the state object for a reducer when using combineReducers.
 -   *reducer* - (*Required*) - this is the reducer that will run on the state for this module.
 -   *initialState* - (*Default: {}*) this is the initialState that will be set for the module .
--   *middlewares* - (*Default: None*) An array of middleware objects (store.getState() will return the root state, not the module's state, to get the module's state use store.getState()\[moduleId\])
+-   *middleware* - (*Default: None*) An array of middleware objects (store.getState() will return the root state, not the module's state, to get the module's state use store.getState()\[moduleId\])
 
 ```javascript
 store.removeModule(moduleId)
@@ -90,7 +90,7 @@ var myModule = {
   moduleId: "my-module",
   reducer: myModuleReducer,
   initialState: myModuleInitialState,
-  middlewares: [ myModuleMiddleware1, myModuleMiddleware2]
+  middleware: [ myModuleMiddleware1, myModuleMiddleware2]
 };
 
 store.addModule(myModule);
@@ -104,7 +104,7 @@ store.dispatch({ type: MY_EVENT }); // Only received by myInitialReducer (and an
 Why not check out my other project, react-redux-module that allows you to add,
 
 ```html
-<ReduxModule moduleId="my-module" reducer={ myModuleReducer } initialState={ myModuleInitialState } middlewares={ [ myModuleMiddlware1, myModuleMiddlware2 ] } />
+<ReduxModule moduleId="my-module" reducer={ myModuleReducer } initialState={ myModuleInitialState } middleware={ [ myModuleMiddlware1, myModuleMiddlware2 ] } />
 ```
 or
 ```javascript
@@ -112,7 +112,7 @@ var myModule = {
   moduleId: "my-module",
   reducer: myModuleReducer,
   initialState: myModuleInitialState,
-  middlewares: [ myModuleMiddleware1, myModuleMiddleware2]
+  middleware: [ myModuleMiddleware1, myModuleMiddleware2]
 };
 
 ...
@@ -122,6 +122,53 @@ var myModule = {
 
 anywhere that a component requires a module, so the module is added (if not already added).
 
-## Known issues
+## Recommended module structure
 
--   Using store.replaceReducer will disable the enhancer (to confirm, but believed to be a bug in Redux)
+The following is a tempate to use when creating your own modules,
+
+```javascript
+// Action Types
+export const DO_STUFF = "@@MyModule/DO_STUFF";
+export const DO_MORE_STUFF = "@@MyModule/DO_MORE_STUFF";
+
+// Action creators
+export function doStuff(thingsToDo) {
+  return { type: DO_STUFF, thingsToDo };
+}
+
+export function doMoreStuff(otherStuffToDo) {
+  return { type: DO_STUFF, otherStuffToDo };
+}
+
+// Module creator
+export default createMyModule(moduleId, options) {
+  const initialState = { stuffToDo: [] };
+  const reducer = function(state, action) {
+    switch (action.type) {
+      case DO_STUFF:
+        state = { ...state };
+        state.stuffToDo.push(action.thingsToDo);
+        return state;
+      case DO_MORE_STUFF:
+        state = { ...state };
+        state.stuffToDo.push(action.otherStuffToDo);
+        return state;
+      default:
+        return state;
+    }
+  };
+
+  const middlware = [];
+
+  return {
+    moduleId,
+    reducer,
+    initialState,
+    middleware,
+    doStuff,
+    doMoreStuff,
+    DO_STUFF,
+    DO_MORE_STUFF
+  }
+}
+```

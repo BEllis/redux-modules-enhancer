@@ -1,14 +1,18 @@
 import * as Redux from "redux";
 
-const MODULE_ADDED = "MODULE_LOADED";
-const MODULE_REMOVED = "MODULE_UNLOADED";
+const MODULE_ADDED = "@@modulesEnhancer/MODULE_LOADED";
+const MODULE_REMOVED = "@@modulesEnhancer/MODULE_UNLOADED";
 
 const modulesEnhancer = function() {
   return (createStore) => (reducer, preloadedState, enhancer) => {
-    let currentBaseReducer = reducer;
+    var currentBaseReducer = reducer;
     let modularReducers = {};
     let modularMiddlewareChain = {};
     const modularCombinedReducer = function(state, action) {
+      if (action.type === MODULE_ADDED) {
+        state[action.moduleId] = action.initialState;
+      }
+
       let modularReducersKeys = Object.keys(modularReducers);
       let modularState = {};
       for (let i = 0; i < modularReducersKeys.length; i++) {
@@ -55,7 +59,7 @@ const modulesEnhancer = function() {
       return modularReducers[moduleId] !== undefined;
     }
 
-    const addModule = function(moduleId, reducer, initialState, ...middlewares) {
+    const addModule = function(moduleId, reducer, initialState, ...middleware) {
       if (moduleId instanceof Object) {
         if (typeof moduleId.moduleId !== "string") {
           throw new Error("module.id must be a string value.");
@@ -65,7 +69,7 @@ const modulesEnhancer = function() {
         moduleId = module.moduleId;
         reducer = module.reducer;
         initialState = module.initialState;
-        middlewares = module.middlewares;
+        middleware = module.middleware;
       }
 
       if (typeof moduleId !== "string") {
@@ -77,11 +81,11 @@ const modulesEnhancer = function() {
       }
 
       if (initialState instanceof Function) {
-        middlewares = [ initialState, ...middlewares ]
+        middleware = [ initialState, ...middleware ]
       }
 
-      if (initialState instanceof Array && (middlewares == undefined || middlewares.length === 0)) {
-        middlewares = initialState;
+      if (initialState instanceof Array && (middleware == undefined || middleware.length === 0)) {
+        middleware = initialState;
       }
 
       if (store.getState()[moduleId] !== undefined) {
@@ -93,17 +97,17 @@ const modulesEnhancer = function() {
         dispatch: (...args) => innerDispatch(...args)
       }
 
-      if (middlewares instanceof Function) {
-        middlewares = [ middlewares];
+      if (middleware instanceof Function) {
+        middleware = [ middleware];
       }
 
-      if (middlewares instanceof Array) {
-        let chain = middlewares.map(middleware => middleware(middlewareAPI));
+      if (middleware instanceof Array) {
+        let chain = middleware.map(middleware => middleware(middlewareAPI));
         modularMiddlewareChain[moduleId] = Redux.compose(...chain);
       }
 
       modularReducers[moduleId] = reducer;
-      innerDispatch({ type: MODULE_ADDED, moduleId: moduleId });
+      innerDispatch({ type: MODULE_ADDED, moduleId: moduleId, initialState: initialState });
     }
 
     const removeModule = function(moduleId) {
@@ -133,10 +137,16 @@ const modulesEnhancer = function() {
       }
     }
 
+    const replaceReducer = function(nextReducer) {
+      currentBaseReducer = nextReducer;
+      store.replaceReducer(modularCombinedReducer);
+    }
+
     const dispatch = innerDispatch;
 
     return {
       ...store,
+      replaceReducer,
       dispatch,
       hasModule,
       addModule,

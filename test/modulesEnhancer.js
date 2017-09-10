@@ -10,7 +10,7 @@ const createSampleModule = () => {
     moduleId: "my-module-id",
     reducer: (state, action) => { reducerActions.push(action); return state; },
     initialState: { bob: "the builder" },
-    middlewares: store => next => action => { middlewareActions.push(action); return next(action); },
+    middleware: store => next => action => { middlewareActions.push(action); return next(action); },
     middlewareActions,
     reducerActions,
   }
@@ -56,31 +56,30 @@ describe("modulesEnhancer", function() {
 
       // Action
       store.dispatch({ type: MY_AMAZING_ACTION });
-      store.addModule(module.moduleId, module.reducer, module.initialState, module.middlewares);
+      store.addModule(module.moduleId, module.reducer, module.initialState, module.middleware);
       store.dispatch({ type: MY_AMAZING_ACTION });
 
       // Assert
       expect(store.baseReducerActions.length).to.equal(4); // INIT, MY_AMAZING_ACTION, MODULE_ADDED, MY_AMAZING_ACTION
       expect(module.reducerActions.length).to.equal(2); // MODULE_ADDED, MY_AMAZING_ACTION
       expect(module.middlewareActions.length).to.equal(2); // MODULE_ADDED, MY_AMAZING_ACTION
-
     });
 
-    it("adds a module with only moduleId, reducer and middlewares", function() {
+    it("adds a module with only moduleId, reducer and middleware", function() {
       // Arrange
       const store = createStoreWithEnhancer();
       const module = createSampleModule();
 
       // Action
       store.dispatch({ type: MY_AMAZING_ACTION });
-      store.addModule(module.moduleId, module.reducer, module.middlewares);
+      store.addModule(module.moduleId, module.reducer, module.middleware);
       store.dispatch({ type: MY_AMAZING_ACTION });
 
       // Assert
       expect(store.baseReducerActions.length).to.equal(4); // INIT, MY_AMAZING_ACTION, MODULE_ADDED, MY_AMAZING_ACTION
       expect(module.reducerActions.length).to.equal(2); // MODULE_ADDED, MY_AMAZING_ACTION
       expect(module.middlewareActions.length).to.equal(2); // MODULE_ADDED, MY_AMAZING_ACTION
-    })
+    });
 
     it("adds a module as a module object", function() {
       // Arrange
@@ -96,14 +95,14 @@ describe("modulesEnhancer", function() {
       expect(store.baseReducerActions.length).to.equal(4); // INIT, MY_AMAZING_ACTION, MODULE_ADDED, MY_AMAZING_ACTION
       expect(module.reducerActions.length).to.equal(2); // MODULE_ADDED, MY_AMAZING_ACTION
       expect(module.middlewareActions.length).to.equal(2); // MODULE_ADDED, MY_AMAZING_ACTION
-    })
+    });
 
     it("adds a module as a module object with only moduleId and reducer", function() {
       // Arrange
       const store = createStoreWithEnhancer();
       const module = createSampleModule();
       delete module.initialState;
-      delete module.middlewares;
+      delete module.middleware;
 
       // Action
       store.dispatch({ type: MY_AMAZING_ACTION });
@@ -114,9 +113,9 @@ describe("modulesEnhancer", function() {
       expect(store.baseReducerActions.length).to.equal(4); // INIT, MY_AMAZING_ACTION, MODULE_ADDED, MY_AMAZING_ACTION
       expect(module.reducerActions.length).to.equal(2); // MODULE_ADDED, MY_AMAZING_ACTION
       expect(module.middlewareActions.length).to.equal(0); // MODULE_ADDED, MY_AMAZING_ACTION
-    })
+    });
 
-    it("adds a module as a module object with only moduleId, reducer and middlewares", function() {
+    it("adds a module as a module object with only moduleId, reducer and middleware", function() {
       // Arange
       const store = createStoreWithEnhancer();
       const module = createSampleModule();
@@ -131,13 +130,13 @@ describe("modulesEnhancer", function() {
       expect(store.baseReducerActions.length).to.equal(4); // INIT, MY_AMAZING_ACTION, MODULE_ADDED, MY_AMAZING_ACTION
       expect(module.reducerActions.length).to.equal(2); // MODULE_ADDED, MY_AMAZING_ACTION
       expect(module.middlewareActions.length).to.equal(2); // MODULE_ADDED, MY_AMAZING_ACTION
-    })
+    });
 
     it("adds a module as a module object with only moduleId, reducer and initialState", function() {
       // Arrange
       const store = createStoreWithEnhancer()
       const module = createSampleModule();
-      delete module.middlewares;
+      delete module.middleware;
 
       // Action
       store.dispatch({ type: MY_AMAZING_ACTION });
@@ -148,6 +147,19 @@ describe("modulesEnhancer", function() {
       expect(store.baseReducerActions.length).to.equal(4); // INIT, MY_AMAZING_ACTION, MODULE_ADDED, MY_AMAZING_ACTION
       expect(module.reducerActions.length).to.equal(2); // MODULE_ADDED, MY_AMAZING_ACTION
       expect(module.middlewareActions.length).to.equal(0); // MODULE_ADDED, MY_AMAZING_ACTION
+    });
+
+    it("sets initial state when adding a module", function() {
+      // Arrange
+      const store = createStoreWithEnhancer();
+      const module = createSampleModule();
+
+      // Action
+      store.dispatch({ type: MY_AMAZING_ACTION });
+      store.addModule(module.moduleId, module.reducer, module.initialState, module.middleware);
+
+      // Assert
+      expect(store.getState()[module.moduleId]).to.deep.equal({ bob: "the builder" });
     })
 
   });
@@ -211,6 +223,33 @@ describe("modulesEnhancer", function() {
       // Assert
       expect(store.hasModule).to.not.equal(undefined);
     });
+  });
 
+  describe("store.replaceReducer", function() {
+    it("only changes the base reducer, module reducers and middleware still work.", function() {
+      // Arrange
+      const newReducerActions = [];
+      const store = createStoreWithEnhancer();
+      const module = createSampleModule();
+      const newReducer = (state, action) => {
+        newReducerActions.push(action);
+        return state;
+      }
+
+      store.addModule(module);
+      store.baseReducerActions.length = 0;
+      module.reducerActions.length = 0;
+      module.middlewareActions.length = 0;
+
+      // Action
+      store.replaceReducer(newReducer);
+      store.dispatch({ type: MY_AMAZING_ACTION })
+
+      // Assert
+      expect(store.baseReducerActions.length).to.equal(0);
+      expect(newReducerActions.length).to.equal(2); // INIT, MY_AMAZING_ACTION
+      expect(module.reducerActions.length).to.equal(2); // INIT, MY_AMAZING_ACTION
+      expect(module.middlewareActions.length).to.equal(1); // MY_AMAZING_ACTION (Middleware doesn't get @@redux/INIT as store uses it's internal dispatch not the enhanced one.)
+    });
   });
 });

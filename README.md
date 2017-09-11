@@ -1,5 +1,11 @@
 # Redux Modules Enhancer
 
+## IMPORTANT NOTICE
+
+*Experimental* I didn't realise publishing this package to NPM would cause so many downloads. This package is still experimental so I would not currently recommend it for production use yet though I intend for it to production ready in the coming days.
+
+Some middleware may not work with this library as all actions are pushed through each middleware in each module, so some middleware may not handle this scenario gracefully, though thunks and redux-observable have been tested.
+
 ## Motivation
 
 Having to compile a list of possible reducers, state and/or middleware ahead-of-time is
@@ -124,50 +130,73 @@ anywhere that a component requires a module, so the module is added (if not alre
 
 ## Recommended module structure
 
-The following is a tempate to use when creating your own modules,
+The following is a template to use when creating your own modules,
 
 ```javascript
-import ReduxThunk from 'redux-thunk'
+import thunk from 'redux-thunk'
+import { myLibraryNs } from "./redux-namespaces.json";
+import { List } from "immutable";
 
 // Action Types
-export const DO_STUFF = "@@MyModule/DO_STUFF";
-export const DO_MORE_STUFF = "@@MyModule/DO_MORE_STUFF";
+const DO_MORE_STUFF = myLibraryNs + "DO_MORE_STUFF";
+const DO_STUFF =  myLibraryNs + "DO_STUFF";
+
+const publicActionTypes = {
+  DO_STUFF,
+}
 
 // Action creators + thunks
-export const doStuff = (thingsToDo) => { type: actionTypes.DO_STUFF, thingsToDo };
-export const doMoreStuff = (otherStuffToDo) => { type: actionTypes.DO_MORE_STUFF, otherStuffToDo };
-export const getStuff = () => (dispatch) => dispatch(actions.otherStuffToDo("Add more middleware."));
+const doMoreStuff = (otherStuffToDo) => { return { type: DO_MORE_STUFF, otherStuffToDo } };
+const doStuff = (thingsToDo) => { return { type: DO_STUFF, thingsToDo } };
+const getStuff = () => (dispatch) => dispatch(doMoreStuff("Add more middleware."));
 
-// Module creator
+const publicActions = {
+  doStuff,
+  getStuff,
+};
+
+// Reducer
+const reducer = function(state, action) {
+  switch (action.type) {
+    case DO_STUFF:
+      state = Object.assign(state, {});
+      state.stuffToDo = state.stuffToDo.push(action.thingsToDo);
+      return state;
+    case DO_MORE_STUFF:
+      state = Object.assign(state, {});
+      state.stuffToDo = state.stuffToDo.push(action.otherStuffToDo);
+      return state;
+    default:
+      return state;
+  }
+};
+
+export const actions = publicActions;
+export const actionTypes = publicActionTypes;
+
+// Module factory
 export default function createMyModule(moduleId, options) {
-
-  const initialState = { stuffToDo: [] };
-
-  const reducer = function(state, action) {
-    switch (action.type) {
-      case actionTypes.DO_STUFF:
-        state = Object.assign(state, {});
-        state.stuffToDo.push(action.thingsToDo);
-        return state;
-      case actionTypes.DO_MORE_STUFF:
-        state = Object.assign(state, {});
-        state.stuffToDo.push(action.otherStuffToDo);
-        return state;
-      default:
-        return state;
-    }
-  };
-
+  const initialState = { stuffToDo: List([]) };
   const middleware = [
-    ReduxThunk
+    thunk,
   ];
 
   return {
     moduleId,
     reducer,
     initialState,
-    middleware
+    middleware,
+    actions,
+    actionTypes,
   }
 }
+```
 
+If you intend to use the same namespace in multiple files, keeps your namespaces in
+a separate redux-namespaces.json file,
+
+```javascript
+{
+  "myLibraryNs": "http://www.example.com/myLibrary/"
+}
 ```

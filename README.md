@@ -127,30 +127,30 @@ anywhere that a component requires a module, so the module is added (if not alre
 The following is a tempate to use when creating your own modules,
 
 ```javascript
+import ReduxThunk from 'redux-thunk'
+
 // Action Types
 export const DO_STUFF = "@@MyModule/DO_STUFF";
 export const DO_MORE_STUFF = "@@MyModule/DO_MORE_STUFF";
 
-// Action creators
-export function doStuff(thingsToDo) {
-  return { type: DO_STUFF, thingsToDo };
-}
-
-export function doMoreStuff(otherStuffToDo) {
-  return { type: DO_STUFF, otherStuffToDo };
-}
+// Action creators + thunks
+export const doStuff = (thingsToDo) => { type: actionTypes.DO_STUFF, thingsToDo };
+export const doMoreStuff = (otherStuffToDo) => { type: actionTypes.DO_MORE_STUFF, otherStuffToDo };
+export const getStuff = () => (dispatch) => dispatch(actions.otherStuffToDo("Add more middleware."));
 
 // Module creator
-export default createMyModule(moduleId, options) {
+export default function createMyModule(moduleId, options) {
+
   const initialState = { stuffToDo: [] };
+
   const reducer = function(state, action) {
     switch (action.type) {
-      case DO_STUFF:
-        state = { ...state };
+      case actionTypes.DO_STUFF:
+        state = Object.assign(state, {});
         state.stuffToDo.push(action.thingsToDo);
         return state;
-      case DO_MORE_STUFF:
-        state = { ...state };
+      case actionTypes.DO_MORE_STUFF:
+        state = Object.assign(state, {});
         state.stuffToDo.push(action.otherStuffToDo);
         return state;
       default:
@@ -158,17 +158,16 @@ export default createMyModule(moduleId, options) {
     }
   };
 
-  const middlware = [];
+  const middleware = [
+    ReduxThunk
+  ];
 
   return {
     moduleId,
     reducer,
     initialState,
-    middleware,
-    doStuff,
-    doMoreStuff,
-    DO_STUFF,
-    DO_MORE_STUFF
+    middleware
   }
 }
+
 ```

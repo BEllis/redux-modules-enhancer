@@ -31,11 +31,19 @@ const modulesEnhancer = function() {
     let innerDispatch = function(...args) {
       let chainArray = [];
       let keys = Object.keys(modularMiddlewareChain);
-      for (let i = 0; i < keys.length; i++) {
-        chainArray.push(modularMiddlewareChain[keys[i]]);
+      let newState = {};
+
+      if (keys.length === 0) {
+        newState = store.dispatch(...args);
       }
 
-      let newState = Redux.compose(...chainArray)(store.dispatch)(...args);
+      for (let i = 0; i < keys  .length; i++) {
+        let newModuleState = modularMiddlewareChain[keys[i]](store.dispatch)(...args);
+        newState = { ...newState, [keys[i]]: newModuleState };
+      }
+
+      // let newState = Redux.compose(...chainArray)(store.dispatch)(...args);
+      // TODO: Put this in reducer?
       if (args[0] !== undefined && args[0].type === MODULE_REMOVED) {
         delete newState[args[0].moduleId];
       }
@@ -80,6 +88,10 @@ const modulesEnhancer = function() {
         throw new Error("Module " + moduleId + " has already been loaded.");
       }
 
+      if (middleware instanceof Array && middleware[0] instanceof Array) {
+        middleware = middleware[0];
+      }
+
       if (initialState instanceof Function) {
         middleware = [ initialState, ...middleware ]
       }
@@ -98,11 +110,11 @@ const modulesEnhancer = function() {
       }
 
       if (middleware instanceof Function) {
-        middleware = [ middleware];
+        middleware = [ middleware ];
       }
 
       if (middleware instanceof Array) {
-        let chain = middleware.map(middleware => middleware(middlewareAPI));
+        let chain = middleware.map(item => item(middlewareAPI));
         modularMiddlewareChain[moduleId] = Redux.compose(...chain);
       }
 

@@ -1,20 +1,12 @@
 import { expect } from "chai";
 import * as Redux from "redux";
 import modulesEnhancer from "../lib/modulesEnhancer";
+import createTemplateModule from "./moduleTemplate.js"
 
 const MY_AMAZING_ACTION = "MY_AMAZING_ACTION";
 const createSampleModule = () => {
-  const middlewareActions = [];
-  const reducerActions = [];
-  return {
-    moduleId: "my-module-id",
-    reducer: (state, action) => { reducerActions.push(action); return state; },
-    initialState: { bob: "the builder" },
-    middleware: store => next => action => { middlewareActions.push(action); return next(action); },
-    middlewareActions,
-    reducerActions,
-  }
-};
+  return createTemplateModule("my-module-id");
+}
 
 const createStoreWithEnhancer = () => {
   const baseReducerActions = [];
@@ -60,6 +52,8 @@ describe("modulesEnhancer", function() {
       store.dispatch({ type: MY_AMAZING_ACTION });
 
       // Assert
+      // console.log(module.middlewareActions);
+      console.log(store.baseReducerActions);
       expect(store.baseReducerActions.length).to.equal(4); // INIT, MY_AMAZING_ACTION, MODULE_ADDED, MY_AMAZING_ACTION
       expect(module.reducerActions.length).to.equal(2); // MODULE_ADDED, MY_AMAZING_ACTION
       expect(module.middlewareActions.length).to.equal(2); // MODULE_ADDED, MY_AMAZING_ACTION
@@ -159,7 +153,7 @@ describe("modulesEnhancer", function() {
       store.addModule(module.moduleId, module.reducer, module.initialState, module.middleware);
 
       // Assert
-      expect(store.getState()[module.moduleId]).to.deep.equal({ bob: "the builder" });
+      expect(store.getState()[module.moduleId]).to.deep.equal({ stuffToDo: [] });
     })
 
   });
@@ -252,4 +246,19 @@ describe("modulesEnhancer", function() {
       expect(module.middlewareActions.length).to.equal(1); // MY_AMAZING_ACTION (Middleware doesn't get @@redux/INIT as store uses it's internal dispatch not the enhanced one.)
     });
   });
+
+  describe("Recommended module template", function() {
+    it("supports thunks middleware", function() {
+      // Arrange
+      let store = createStoreWithEnhancer();
+      let module = createTemplateModule("my-module-id-2", {});
+      store.addModule(module);
+
+      // Action
+      store.dispatch(module.getStuff());
+
+      // Assert
+      expect(store.getState()["my-module"].stuffToDo.length).to.equal(1);
+    })
+  })
 });

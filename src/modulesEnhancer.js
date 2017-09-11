@@ -1,7 +1,8 @@
 import * as Redux from "redux";
 
-const MODULE_ADDED = "@@modulesEnhancer/MODULE_LOADED";
-const MODULE_REMOVED = "@@modulesEnhancer/MODULE_UNLOADED";
+export const ModulesEnhancerNs = "https://github.com/BEllis/redux-modules-enhancer.git/moduleTemplate/";
+export const MODULE_ADDED = ModulesEnhancerNs + "MODULE_ADDED";
+export const MODULE_REMOVED = ModulesEnhancerNs + "MODULE_REMOVED";
 
 const modulesEnhancer = function() {
   return (createStore) => (reducer, preloadedState, enhancer) => {
@@ -29,20 +30,19 @@ const modulesEnhancer = function() {
 
     const store = createStore(modularCombinedReducer, preloadedState, enhancer);
     let innerDispatch = function(...args) {
-      let chainArray = [];
-      let keys = Object.keys(modularMiddlewareChain);
-      let newState = {};
+      const chainArray = [];
+      const keys = Object.keys(modularMiddlewareChain);
+      for (let i = 0; i < keys.length; i++) {
+        chainArray.push(modularMiddlewareChain[keys[i]]);
+      }
 
+      let newState;
       if (keys.length === 0) {
         newState = store.dispatch(...args);
+      } else {
+        newState = Redux.compose(...chainArray)(store.dispatch)(...args);
       }
 
-      for (let i = 0; i < keys  .length; i++) {
-        let newModuleState = modularMiddlewareChain[keys[i]](store.dispatch)(...args);
-        newState = { ...newState, [keys[i]]: newModuleState };
-      }
-
-      // let newState = Redux.compose(...chainArray)(store.dispatch)(...args);
       // TODO: Put this in reducer?
       if (args[0] !== undefined && args[0].type === MODULE_REMOVED) {
         delete newState[args[0].moduleId];
@@ -94,10 +94,12 @@ const modulesEnhancer = function() {
 
       if (initialState instanceof Function) {
         middleware = [ initialState, ...middleware ]
+        initialState = undefined;
       }
 
       if (initialState instanceof Array && (middleware == undefined || middleware.length === 0)) {
         middleware = initialState;
+        initialState = undefined;
       }
 
       if (store.getState()[moduleId] !== undefined) {

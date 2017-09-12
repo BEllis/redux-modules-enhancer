@@ -9,6 +9,7 @@ const modulesEnhancer = function() {
     var currentBaseReducer = reducer;
     let modularReducers = {};
     let modularMiddlewareChain = {};
+    let unloaders = {};
     const modularCombinedReducer = function(state, action) {
       if (action.type === MODULE_ADDED) {
         state[action.moduleId] = action.initialState;
@@ -68,6 +69,8 @@ const modulesEnhancer = function() {
     }
 
     const addModule = function(moduleId, reducer, initialState, ...middleware) {
+      let onLoad = undefined;
+      let onUnload = undefined;
       if (moduleId instanceof Object) {
         if (typeof moduleId.moduleId !== "string") {
           throw new Error("module.id must be a string value.");
@@ -78,6 +81,8 @@ const modulesEnhancer = function() {
         reducer = module.reducer;
         initialState = module.initialState;
         middleware = module.middleware;
+        onLoad = module.onLoad;
+        onUnload = module.onUnload;
       }
 
       if (typeof moduleId !== "string") {
@@ -122,6 +127,13 @@ const modulesEnhancer = function() {
 
       modularReducers[moduleId] = reducer;
       innerDispatch({ type: MODULE_ADDED, moduleId: moduleId, initialState: initialState });
+      if (onLoad instanceof Function) {
+        onLoad(innerDispatch);
+      }
+
+      if (onUnload instanceof Function) {
+        unloaders[moduleId] = onUnload;
+      }
     }
 
     const removeModule = function(moduleId) {
@@ -141,6 +153,10 @@ const modulesEnhancer = function() {
         throw new Error("No such module [" + moduleId + "] has been added");
       }
 
+      if (unloaders[moduleId] instanceof Function) {
+        unloaders[moduleId](innerDispatch);
+      }
+      
       innerDispatch({ type: MODULE_REMOVED, moduleId: moduleId });
       if (modularMiddlewareChain[moduleId] !== undefined) {
         delete modularMiddlewareChain[moduleId];

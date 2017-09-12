@@ -1,6 +1,6 @@
 import { expect } from "chai";
 import * as Redux from "redux";
-import modulesEnhancer from "../dist/redux-modules-enhancer.min.js";
+import modulesEnhancer from "../dist/redux-modules-enhancer.js";
 import createTemplateModule from "./ModuleTemplate.js"
 import { MIDDLEWARE_ACTION } from "./UnitTestModule.js";
 import { List } from "immutable";
@@ -157,7 +157,24 @@ describe("modulesEnhancer", function() {
       delete state.middlewareActions;
       delete state.reducerActions;
       expect(state).to.deep.equal({ stuffToDo: List([]) });
-    })
+    });
+
+    it("calls module.onLoad when the module is loaded.", function() {
+      // Arrange
+      const store = createStoreWithEnhancer()
+      const module = createSampleModule();
+      module.onLoad = (dispatch) => { return dispatch({ type: MY_AMAZING_ACTION }); };
+
+      // Action
+      store.dispatch({ type: MY_AMAZING_ACTION });
+      store.addModule(module);
+      store.dispatch({ type: MY_AMAZING_ACTION });
+
+      // Assert
+      expect(store.baseReducerActions.length).to.equal(5); // INIT, MY_AMAZING_ACTION, MODULE_ADDED, MY_AMAZING_ACTION, MY_AMAZING_ACTION
+      expect(store.getState()[module.moduleId].reducerActions.size).to.equal(3); // MODULE_ADDED, MY_AMAZING_ACTION, MY_AMAZING_ACTION
+      expect(store.getState()[module.moduleId].middlewareActions.size).to.equal(3); // MODULE_ADDED, MY_AMAZING_ACTION, MY_AMAZING_ACTION
+    });
 
   });
 
@@ -206,6 +223,26 @@ describe("modulesEnhancer", function() {
       expect(store.baseReducerActions.length).to.equal(6); // INIT, MY_AMAZING_ACTION, MODULE_ADDED, MY_AMAZING_ACTION, MODULE_REMOVED, MY_AMAZING_ACTION
       expect(store.getState()[module.moduleId].reducerActions.size).to.equal(3); // MODULE_ADDED, MY_AMAZING_ACTION, MODULE_REMOVED
       expect(store.getState()[module.moduleId].middlewareActions.size).to.equal(3); // MODULE_ADDED, MY_AMAZING_ACTION, MODULE_REMOVED
+      expect(store.getState()["my-module"]).to.equal(undefined);
+    });
+
+    it("calls module.onUnload when a module is removed", function() {
+      // Arrange
+      const store = createStoreWithEnhancer();
+      const module = createSampleModule();
+      module.onUnload = (dispatch) => { return dispatch({ type: MY_AMAZING_ACTION }); };
+
+      // Action
+      store.dispatch({ type: MY_AMAZING_ACTION });
+      store.addModule(module);
+      store.dispatch({ type: MY_AMAZING_ACTION });
+      store.removeModule(module.moduleId);
+      store.dispatch({ type: MY_AMAZING_ACTION });
+
+      // Assert
+      expect(store.baseReducerActions.length).to.equal(7); // INIT, MY_AMAZING_ACTION, MODULE_ADDED, MY_AMAZING_ACTION, MY_AMAZING_ACTION, MODULE_REMOVED, MY_AMAZING_ACTION
+      expect(store.getState()[module.moduleId].reducerActions.size).to.equal(4); // MODULE_ADDED, MY_AMAZING_ACTION, MY_AMAZING_ACTION, MODULE_REMOVED
+      expect(store.getState()[module.moduleId].middlewareActions.size).to.equal(4); // MODULE_ADDED, MY_AMAZING_ACTION, MY_AMAZING_ACTION, MODULE_REMOVED
       expect(store.getState()["my-module"]).to.equal(undefined);
     });
 

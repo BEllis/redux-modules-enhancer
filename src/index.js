@@ -1,4 +1,4 @@
-import * as Redux from "redux";
+import { compose } from "redux";
 
 export const ModulesEnhancerNs = "https://github.com/BEllis/redux-modules-enhancer.git/moduleTemplate/";
 export const MODULE_ADDED = ModulesEnhancerNs + "MODULE_ADDED";
@@ -40,7 +40,7 @@ const modulesEnhancer = function() {
       if (keys.length === 0) {
         newState = store.dispatch(...args);
       } else {
-        newState = Redux.compose(...chainArray)(store.dispatch)(...args);
+        newState = compose(...chainArray)(store.dispatch)(...args);
       }
 
       // TODO: Put this in reducer?
@@ -117,7 +117,7 @@ const modulesEnhancer = function() {
 
       if (middleware instanceof Array) {
         let chain = middleware.map(item => item(middlewareAPI));
-        modularMiddlewareChain[moduleId] = Redux.compose(...chain);
+        modularMiddlewareChain[moduleId] = compose(...chain);
       }
 
       modularReducers[moduleId] = reducer;

@@ -1,6 +1,6 @@
 import { expect } from "chai";
 import * as Redux from "redux";
-import modulesEnhancer from "../lib/modulesEnhancer";
+import modulesEnhancer from "../dist/redux-modules-enhancer.min.js";
 import createTemplateModule from "./ModuleTemplate.js"
 import { MIDDLEWARE_ACTION } from "./UnitTestModule.js";
 import { List } from "immutable";

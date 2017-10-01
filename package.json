@@ -1,6 +1,6 @@
 {
   "name": "redux-modules-enhancer",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "A redux enhancer to support late-bound reducer, state and middleware injection.",
   "main": "lib/modulesEnhancer.js",
   "scripts": {

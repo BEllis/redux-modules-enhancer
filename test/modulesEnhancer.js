@@ -6,8 +6,8 @@ import { MIDDLEWARE_ACTION } from "./UnitTestModule.js";
 import { List } from "immutable";
 
 const MY_AMAZING_ACTION = "MY_AMAZING_ACTION";
-const createSampleModule = () => {
-  return createTemplateModule("my-module-id");
+const createSampleModule = moduleId => {
+  return createTemplateModule(moduleId || "my-module-id");
 }
 
 const createStoreWithEnhancer = () => {
@@ -289,6 +289,29 @@ describe("modulesEnhancer", function() {
       expect(store.getState()[module.moduleId].middlewareActions.size).to.equal(1); // MY_AMAZING_ACTION (Middleware doesn't get @@redux/INIT as store uses it's internal dispatch not the enhanced one.)
     });
   });
+
+  describe("Middleware support", function() {
+    it("Only calls middleware once", function() {
+      // Arrange
+      const store = createStoreWithEnhancer();
+      const module = createSampleModule();
+      const module2 = createSampleModule("test-module-2");
+
+      // Action
+      store.dispatch({ type: MY_AMAZING_ACTION });
+      store.addModule(module);
+      store.dispatch({ type: MY_AMAZING_ACTION });
+      store.addModule(module2);
+      store.dispatch({ type: MY_AMAZING_ACTION });
+
+      // Assert
+      expect(store.baseReducerActions.length).to.equal(6); // INIT, MY_AMAZING_ACTION, MODULE_ADDED, MY_AMAZING_ACTION, MODULE_ADDED, MY_AMAZING_ACTION
+      expect(store.getState()[module.moduleId].reducerActions.size).to.equal(4); // MODULE_ADDED, MY_AMAZING_ACTION  MODULE_ADDED, MY_AMAZING_ACTION
+      expect(store.getState()[module.moduleId].middlewareActions.size).to.equal(4); // MODULE_ADDED, MY_AMAZING_ACTION MODULE_ADDED, MY_AMAZING_ACTION
+      expect(store.getState()[module2.moduleId].reducerActions.size).to.equal(2); // MODULE_ADDED, MY_AMAZING_ACTION
+      expect(store.getState()[module2.moduleId].middlewareActions.size).to.equal(2); // MODULE_ADDED, MY_AMAZING_ACTION
+    });
+  })
 
   describe("Recommended module template", function() {
     it("supports thunks middleware", function() {

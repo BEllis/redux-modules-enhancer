@@ -1,4 +1,4 @@
 {
-  "moduleTemplateNs": "https://github.com/BEllis/redux-modules-enhancer.git/moduleTemplate/",
-  "unitTestNs": "https://github.com/BEllis/redux-modules-enhancer.git/unittest/"
+  "moduleTemplateNs": "@@redux-module-enhancer-tests/moduleTemplate/",
+  "unitTestNs": "@@redux-module-enhancer-tests/unittest/"
 }

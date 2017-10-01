@@ -23,34 +23,6 @@ const publicActions = {
   getStuff,
 };
 
-// Reducer
-const reducer = function(state, action) {
-  // Used in unit test.
-  if (state === undefined || state === null) {
-    state = { reducerActions: List([]), middlewareActions: List([]) };
-  }
-
-  state = Object.assign(state, {});
-  if (action.type !== MIDDLEWARE_ACTION) {
-    state.reducerActions = state.reducerActions.push(action);
-  }
-
-  if (action.type === MIDDLEWARE_ACTION) {
-    state.middlewareActions = state.middlewareActions.push(action.action);
-  }
-
-  switch (action.type) {
-    case DO_STUFF:
-      state.stuffToDo = state.stuffToDo.push(action.thingsToDo);
-      return state;
-    case DO_MORE_STUFF:
-      state.stuffToDo = state.stuffToDo.push(action.otherStuffToDo);
-      return state;
-    default:
-      return state;
-  }
-};
-
 export const actions = publicActions;
 export const actionTypes = publicActionTypes;
 
@@ -59,9 +31,37 @@ export default function createMyModule(moduleId, options) {
   const initialState = { stuffToDo: List([]), reducerActions: List([]), middlewareActions: List([]) };
   const middleware = [
     // Used in unit test (this is hack, must be a neater way to do this.)
-    store => next => action => { const result = next(action); next({ type: MIDDLEWARE_ACTION, action }); return result;},
+    store => next => action => { const result = next(action); if (action.type !== MIDDLEWARE_ACTION) { next({ type: MIDDLEWARE_ACTION, moduleId, action }); }; return result;},
     thunk,
   ];
+
+  // Reducer
+  const reducer = function(state, action) {
+    // Used in unit test.
+    if (state === undefined || state === null) {
+      state = { reducerActions: List([]), middlewareActions: List([]) };
+    }
+
+    state = Object.assign(state, {});
+    if (action.type !== MIDDLEWARE_ACTION) {
+      state.reducerActions = state.reducerActions.push(action);
+    }
+
+    if (action.type === MIDDLEWARE_ACTION && action.moduleId === moduleId) {
+      state.middlewareActions = state.middlewareActions.push(action.action);
+    }
+
+    switch (action.type) {
+      case DO_STUFF:
+        state.stuffToDo = state.stuffToDo.push(action.thingsToDo);
+        return state;
+      case DO_MORE_STUFF:
+        state.stuffToDo = state.stuffToDo.push(action.otherStuffToDo);
+        return state;
+      default:
+        return state;
+    }
+  };
 
   return {
     moduleId,

@@ -120,7 +120,7 @@ const modulesEnhancer = function() {
       if (middleware instanceof Array) {
         const middlewareAPI = {
           getState: store.getState,
-          dispatch: store.dispatch
+          dispatch: innerDispatch
         }
 
         let chain = middleware.map(item => item(middlewareAPI));
